@@ -1092,10 +1092,18 @@ export class DidDhtDocument {
           // other properties from the decoded TXT record data.
           const { id, t, se, ...customProperties } = DidDhtUtils.parseTxtDataToObject(answer.data);
 
-          // if multi-values: 'a,b,c' -> ['a', 'b', 'c'], if single-value: 'a' -> ['a']
-          // NOTE: The service endpoint technically can either be a string or an array of strings,
-          // we enforce an array for single-value to simplify verification of vector 3 in the spec: https://did-dht.com/#vector-3
-          const serviceEndpoint = se.includes(VALUE_SEPARATOR) ? se.split(VALUE_SEPARATOR) : [se];
+          let serviceEndpoint;
+          try {
+            serviceEndpoint = Convert.base64Url(se).toObject();
+          } catch (error) {
+            // if the service endpoint is not a valid base64url encoded object, then we assume it is
+            // a string or array of strings separated by commas
+
+            // if multi-values: 'a,b,c' -> ['a', 'b', 'c'], if single-value: 'a' -> ['a']
+            // NOTE: The service endpoint technically can either be a string or an array of strings,
+            // we enforce an array for single-value to simplify verification of vector 3 in the spec: https://did-dht.com/#vector-3
+            serviceEndpoint = se.includes(VALUE_SEPARATOR) ? se.split(VALUE_SEPARATOR) : [se];
+          }
 
           // Convert custom property values to either a string or an array of strings.
           const serviceProperties = Object.fromEntries(Object.entries(customProperties).map(
@@ -1107,9 +1115,9 @@ export class DidDhtDocument {
 
           didDocument.service.push({
             ...serviceProperties,
-            id   : `${didUri}#${id}`,
-            type : t,
-            serviceEndpoint
+            id              : `${didUri}#${id}`,
+            type            : t,
+            serviceEndpoint : serviceEndpoint
           });
 
           break;
@@ -1268,7 +1276,14 @@ export class DidDhtDocument {
       serviceIds.push(dnsRecordId);
       let { id, type: t, serviceEndpoint: se, ...customProperties } = service;
       id = extractDidFragment(id)!;
-      se = Array.isArray(se) ? se.join(',') : se;
+
+      if (typeof se === 'object') {
+        if (Array.isArray(se)) {
+          se = se.join(',');
+        } else {
+          se = Convert.object(se).toBase64Url();
+        }
+      }
 
       // Define the data for the DNS TXT record.
       const txtData = Object.entries({ id, t, se, ...customProperties }).map(
