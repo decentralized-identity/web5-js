@@ -9,7 +9,7 @@ import officialTestVector3 from '../fixtures/test-vectors/did-dht/vector-3.json'
 
 import { Answer } from '@dnsquery/dns-packet';
 import { Convert } from '@web5/common';
-import { DidDocument } from '../../src/index.js';
+import { DidDocument, DidService } from '../../src/index.js';
 import { DidErrorCode } from '../../src/did-error.js';
 import { DidDht, DidDhtDocument, DidDhtRegisteredDidType, DidDhtUtils } from '../../src/methods/did-dht.js';
 import { expect, use } from 'chai';
@@ -915,78 +915,94 @@ describe('DidDhtDocument', () => {
   });
 
   describe('DNS Packet e2e tests', () => {
-    it('handles custom array for services', async () => {
+    let didUri: string;
+    let didDocument: DidDocument;
 
-      const didUri = 'did:dht:5cahcfh3zh8bqd5cn3y6inoea1b3d6kh85rjksne9e5dcyrc1ery';
-      const dnsPacket = await DidDhtDocument.toDnsPacket({
-        didDocument: {
-          id                 : didUri,
-          verificationMethod : [
-            {
-              id           : 'did:dht:5cahcfh3zh8bqd5cn3y6inoea1b3d6kh85rjksne9e5dcyrc1ery#0',
-              type         : 'JsonWebKey',
-              controller   : 'did:dht:5cahcfh3zh8bqd5cn3y6inoea1b3d6kh85rjksne9e5dcyrc1ery',
-              publicKeyJwk : {
-                crv : 'Ed25519',
-                kty : 'OKP',
-                x   : '2zHGF5m_DhcPbBZB6ooIxIOR-Vw-yJVYSPo2NgCMkgg',
-                kid : 'KDT9PKj4_z7gPk2s279Y-OGlMtt_L93oJzIaiVrrySU',
-                alg : 'EdDSA',
-              },
+    beforeEach(() => {
+      didUri = 'did:dht:5cahcfh3zh8bqd5cn3y6inoea1b3d6kh85rjksne9e5dcyrc1ery';
+      didDocument = {
+        id                 : didUri,
+        verificationMethod : [
+          {
+            id           : 'did:dht:5cahcfh3zh8bqd5cn3y6inoea1b3d6kh85rjksne9e5dcyrc1ery#0',
+            type         : 'JsonWebKey',
+            controller   : 'did:dht:5cahcfh3zh8bqd5cn3y6inoea1b3d6kh85rjksne9e5dcyrc1ery',
+            publicKeyJwk : {
+              crv : 'Ed25519',
+              kty : 'OKP',
+              x   : '2zHGF5m_DhcPbBZB6ooIxIOR-Vw-yJVYSPo2NgCMkgg',
+              kid : 'KDT9PKj4_z7gPk2s279Y-OGlMtt_L93oJzIaiVrrySU',
+              alg : 'EdDSA',
             },
-            {
-              id           : 'did:dht:5cahcfh3zh8bqd5cn3y6inoea1b3d6kh85rjksne9e5dcyrc1ery#sig',
-              type         : 'JsonWebKey',
-              controller   : 'did:dht:5cahcfh3zh8bqd5cn3y6inoea1b3d6kh85rjksne9e5dcyrc1ery',
-              publicKeyJwk : {
-                crv : 'Ed25519',
-                kty : 'OKP',
-                x   : 'FrrBhqvAWxE4lstj-IWgN8_5-O4L1KuZjdNjn5bX_dw',
-                kid : 'dRnxo2XQ7QT1is5WmpEefwEz3z4_4JdpGea6KWUn3ww',
-                alg : 'EdDSA',
-              },
+          },
+          {
+            id           : 'did:dht:5cahcfh3zh8bqd5cn3y6inoea1b3d6kh85rjksne9e5dcyrc1ery#sig',
+            type         : 'JsonWebKey',
+            controller   : 'did:dht:5cahcfh3zh8bqd5cn3y6inoea1b3d6kh85rjksne9e5dcyrc1ery',
+            publicKeyJwk : {
+              crv : 'Ed25519',
+              kty : 'OKP',
+              x   : 'FrrBhqvAWxE4lstj-IWgN8_5-O4L1KuZjdNjn5bX_dw',
+              kid : 'dRnxo2XQ7QT1is5WmpEefwEz3z4_4JdpGea6KWUn3ww',
+              alg : 'EdDSA',
             },
-            {
-              id           : 'did:dht:5cahcfh3zh8bqd5cn3y6inoea1b3d6kh85rjksne9e5dcyrc1ery#enc',
-              type         : 'JsonWebKey',
-              controller   : 'did:dht:5cahcfh3zh8bqd5cn3y6inoea1b3d6kh85rjksne9e5dcyrc1ery',
-              publicKeyJwk : {
-                kty : 'EC',
-                crv : 'secp256k1',
-                x   : 'e1_pCWZwI9cxdrotVKIT8t75itk22XkpalDPx7pVpYQ',
-                y   : '5cAlBmnzzuwRNuFtLhyFNdy9v1rVEqEgrFEiiwKMx5I',
-                kid : 'jGYs9XgQMDH_PCDFWocTN0F06mTUOA1J1McVvluq4lM',
-                alg : 'ES256K',
-              },
+          },
+          {
+            id           : 'did:dht:5cahcfh3zh8bqd5cn3y6inoea1b3d6kh85rjksne9e5dcyrc1ery#enc',
+            type         : 'JsonWebKey',
+            controller   : 'did:dht:5cahcfh3zh8bqd5cn3y6inoea1b3d6kh85rjksne9e5dcyrc1ery',
+            publicKeyJwk : {
+              kty : 'EC',
+              crv : 'secp256k1',
+              x   : 'e1_pCWZwI9cxdrotVKIT8t75itk22XkpalDPx7pVpYQ',
+              y   : '5cAlBmnzzuwRNuFtLhyFNdy9v1rVEqEgrFEiiwKMx5I',
+              kid : 'jGYs9XgQMDH_PCDFWocTN0F06mTUOA1J1McVvluq4lM',
+              alg : 'ES256K',
             },
-          ],
-          authentication: [
-            'did:dht:5cahcfh3zh8bqd5cn3y6inoea1b3d6kh85rjksne9e5dcyrc1ery#0',
-            'did:dht:5cahcfh3zh8bqd5cn3y6inoea1b3d6kh85rjksne9e5dcyrc1ery#sig',
-          ],
-          assertionMethod: [
-            'did:dht:5cahcfh3zh8bqd5cn3y6inoea1b3d6kh85rjksne9e5dcyrc1ery#0',
-            'did:dht:5cahcfh3zh8bqd5cn3y6inoea1b3d6kh85rjksne9e5dcyrc1ery#sig',
-          ],
-          capabilityDelegation: [
-            'did:dht:5cahcfh3zh8bqd5cn3y6inoea1b3d6kh85rjksne9e5dcyrc1ery#0',
-          ],
-          capabilityInvocation: [
-            'did:dht:5cahcfh3zh8bqd5cn3y6inoea1b3d6kh85rjksne9e5dcyrc1ery#0',
-          ],
-          keyAgreement: [
-            'did:dht:5cahcfh3zh8bqd5cn3y6inoea1b3d6kh85rjksne9e5dcyrc1ery#enc',
-          ],
-          service: [
-            {
-              id              : 'did:dht:5cahcfh3zh8bqd5cn3y6inoea1b3d6kh85rjksne9e5dcyrc1ery#dwn',
-              type            : 'DecentralizedWebNode',
-              serviceEndpoint : 'https://example.com/dwn',
-              enc             : '#enc',
-              sig             : ['#sig', '#0'],
-            },
-          ],
+          },
+        ],
+        authentication: [
+          'did:dht:5cahcfh3zh8bqd5cn3y6inoea1b3d6kh85rjksne9e5dcyrc1ery#0',
+          'did:dht:5cahcfh3zh8bqd5cn3y6inoea1b3d6kh85rjksne9e5dcyrc1ery#sig',
+        ],
+        assertionMethod: [
+          'did:dht:5cahcfh3zh8bqd5cn3y6inoea1b3d6kh85rjksne9e5dcyrc1ery#0',
+          'did:dht:5cahcfh3zh8bqd5cn3y6inoea1b3d6kh85rjksne9e5dcyrc1ery#sig',
+        ],
+        capabilityDelegation: [
+          'did:dht:5cahcfh3zh8bqd5cn3y6inoea1b3d6kh85rjksne9e5dcyrc1ery#0',
+        ],
+        capabilityInvocation: [
+          'did:dht:5cahcfh3zh8bqd5cn3y6inoea1b3d6kh85rjksne9e5dcyrc1ery#0',
+        ],
+        keyAgreement: [
+          'did:dht:5cahcfh3zh8bqd5cn3y6inoea1b3d6kh85rjksne9e5dcyrc1ery#enc',
+        ],
+        service: [
+          {
+            id              : 'did:dht:5cahcfh3zh8bqd5cn3y6inoea1b3d6kh85rjksne9e5dcyrc1ery#dwn',
+            type            : 'DecentralizedWebNode',
+            serviceEndpoint : 'https://example.com/dwn',
+            enc             : '#enc',
+            sig             : '#sig',
+          },
+        ] as DidService[],
+      } satisfies DidDocument;
+    });
+
+    it('handles custom array for services', async () => {
+      didDocument.service = [
+        {
+          id              : 'did:dht:5cahcfh3zh8bqd5cn3y6inoea1b3d6kh85rjksne9e5dcyrc1ery#dwn',
+          type            : 'DecentralizedWebNode',
+          serviceEndpoint : 'https://example.com/dwn',
+          enc             : '#enc',
+          sig             : ['#sig', '#0'],
         },
+      ];
+
+      const dnsPacket = await DidDhtDocument.toDnsPacket({
+        didDocument,
         didMetadata: {
           published: false,
         }
@@ -1014,77 +1030,8 @@ describe('DidDhtDocument', () => {
     });
 
     it('handles custom string properties for services', async () => {
-      const didUri = 'did:dht:5cahcfh3zh8bqd5cn3y6inoea1b3d6kh85rjksne9e5dcyrc1ery';
-
       const dnsPacket = await DidDhtDocument.toDnsPacket({
-        didDocument: {
-          id                 : didUri,
-          verificationMethod : [
-            {
-              id           : 'did:dht:5cahcfh3zh8bqd5cn3y6inoea1b3d6kh85rjksne9e5dcyrc1ery#0',
-              type         : 'JsonWebKey',
-              controller   : 'did:dht:5cahcfh3zh8bqd5cn3y6inoea1b3d6kh85rjksne9e5dcyrc1ery',
-              publicKeyJwk : {
-                crv : 'Ed25519',
-                kty : 'OKP',
-                x   : '2zHGF5m_DhcPbBZB6ooIxIOR-Vw-yJVYSPo2NgCMkgg',
-                kid : 'KDT9PKj4_z7gPk2s279Y-OGlMtt_L93oJzIaiVrrySU',
-                alg : 'EdDSA',
-              },
-            },
-            {
-              id           : 'did:dht:5cahcfh3zh8bqd5cn3y6inoea1b3d6kh85rjksne9e5dcyrc1ery#sig',
-              type         : 'JsonWebKey',
-              controller   : 'did:dht:5cahcfh3zh8bqd5cn3y6inoea1b3d6kh85rjksne9e5dcyrc1ery',
-              publicKeyJwk : {
-                crv : 'Ed25519',
-                kty : 'OKP',
-                x   : 'FrrBhqvAWxE4lstj-IWgN8_5-O4L1KuZjdNjn5bX_dw',
-                kid : 'dRnxo2XQ7QT1is5WmpEefwEz3z4_4JdpGea6KWUn3ww',
-                alg : 'EdDSA',
-              },
-            },
-            {
-              id           : 'did:dht:5cahcfh3zh8bqd5cn3y6inoea1b3d6kh85rjksne9e5dcyrc1ery#enc',
-              type         : 'JsonWebKey',
-              controller   : 'did:dht:5cahcfh3zh8bqd5cn3y6inoea1b3d6kh85rjksne9e5dcyrc1ery',
-              publicKeyJwk : {
-                kty : 'EC',
-                crv : 'secp256k1',
-                x   : 'e1_pCWZwI9cxdrotVKIT8t75itk22XkpalDPx7pVpYQ',
-                y   : '5cAlBmnzzuwRNuFtLhyFNdy9v1rVEqEgrFEiiwKMx5I',
-                kid : 'jGYs9XgQMDH_PCDFWocTN0F06mTUOA1J1McVvluq4lM',
-                alg : 'ES256K',
-              },
-            },
-          ],
-          authentication: [
-            'did:dht:5cahcfh3zh8bqd5cn3y6inoea1b3d6kh85rjksne9e5dcyrc1ery#0',
-            'did:dht:5cahcfh3zh8bqd5cn3y6inoea1b3d6kh85rjksne9e5dcyrc1ery#sig',
-          ],
-          assertionMethod: [
-            'did:dht:5cahcfh3zh8bqd5cn3y6inoea1b3d6kh85rjksne9e5dcyrc1ery#0',
-            'did:dht:5cahcfh3zh8bqd5cn3y6inoea1b3d6kh85rjksne9e5dcyrc1ery#sig',
-          ],
-          capabilityDelegation: [
-            'did:dht:5cahcfh3zh8bqd5cn3y6inoea1b3d6kh85rjksne9e5dcyrc1ery#0',
-          ],
-          capabilityInvocation: [
-            'did:dht:5cahcfh3zh8bqd5cn3y6inoea1b3d6kh85rjksne9e5dcyrc1ery#0',
-          ],
-          keyAgreement: [
-            'did:dht:5cahcfh3zh8bqd5cn3y6inoea1b3d6kh85rjksne9e5dcyrc1ery#enc',
-          ],
-          service: [
-            {
-              id              : 'did:dht:5cahcfh3zh8bqd5cn3y6inoea1b3d6kh85rjksne9e5dcyrc1ery#dwn',
-              type            : 'DecentralizedWebNode',
-              serviceEndpoint : 'https://example.com/dwn',
-              enc             : '#enc',
-              sig             : '#sig',
-            },
-          ],
-        },
+        didDocument,
         didMetadata: {
           published: false,
         }
@@ -1109,6 +1056,73 @@ describe('DidDhtDocument', () => {
       expect(didResolutionResult.didDocument).to.have.property('id', didUri);
       expect(didResolutionResult.didDocument!.service![0].sig).to.equal('#sig');
       expect(didResolutionResult.didDocument!.service![0].enc).to.equal('#enc');
+    });
+
+    it('handles serviceEndpoint as an array of strings in services', async () => {
+      didDocument.service = [
+        {
+          id              : 'did:dht:5cahcfh3zh8bqd5cn3y6inoea1b3d6kh85rjksne9e5dcyrc1ery#dwn',
+          type            : 'DecentralizedWebNode',
+          serviceEndpoint : ['https://example.com/dwn', 'https://example.com/dwn2'],
+        },
+      ];
+
+      const dnsPacket = await DidDhtDocument.toDnsPacket({
+        didDocument,
+        didMetadata: {
+          published: false,
+        }
+      });
+
+      for (const record of dnsPacket.answers ?? []) {
+        if (record.name.startsWith('_s')) {
+          expect(record.data).to.include('id=dwn');
+          expect(record.data).to.include('t=DecentralizedWebNode');
+          expect(record.data).to.include('se=https://example.com/dwn,https://example.com/dwn2');
+        }
+      }
+
+      const didResolutionResult = await DidDhtDocument.fromDnsPacket({ didUri, dnsPacket });
+
+      expect(didResolutionResult).to.have.property('didDocument');
+      expect(didResolutionResult).to.have.property('didDocumentMetadata');
+      expect(didResolutionResult).to.have.property('didResolutionMetadata');
+
+      expect(didResolutionResult.didDocument).to.have.property('id', didUri);
+      expect(didResolutionResult.didDocument!.service![0].serviceEndpoint).to.deep.equal(['https://example.com/dwn', 'https://example.com/dwn2']);
+    });
+
+    it('handles serviceEndpoint as an object in services', async () => {
+      didDocument.service= [
+        {
+          id              : 'did:dht:5cahcfh3zh8bqd5cn3y6inoea1b3d6kh85rjksne9e5dcyrc1ery#didcomm',
+          type            : 'DIDCommMessaging',
+          serviceEndpoint : { uri: 'https://example.com/dwn', routingKeys: ['did:example:somemediator#somekey'] },
+        },
+      ];
+
+      const dnsPacket = await DidDhtDocument.toDnsPacket({
+        didDocument,
+        didMetadata: {
+          published: false,
+        }});
+
+      for (const record of dnsPacket.answers ?? []) {
+        if (record.name.startsWith('_s')) {
+          expect(record.data).to.include('id=didcomm');
+          expect(record.data).to.include('t=DIDCommMessaging');
+          expect(record.data).to.include('se=eyJ1cmkiOiJodHRwczovL2V4YW1wbGUuY29tL2R3biIsInJvdXRpbmdLZXlzIjpbImRpZDpleGFtcGxlOnNvbWVtZWRpYXRvciNzb21la2V5Il19');
+        }
+      }
+
+      const didResolutionResult = await DidDhtDocument.fromDnsPacket({ didUri, dnsPacket });
+
+      expect(didResolutionResult).to.have.property('didDocument');
+      expect(didResolutionResult).to.have.property('didDocumentMetadata');
+      expect(didResolutionResult).to.have.property('didResolutionMetadata');
+
+      expect(didResolutionResult.didDocument).to.have.property('id', didUri);
+      expect(didResolutionResult.didDocument!.service![0].serviceEndpoint).to.deep.equal({ uri: 'https://example.com/dwn', routingKeys: ['did:example:somemediator#somekey'] });
     });
 
     it('handles user defined Key Ids', async () => {
