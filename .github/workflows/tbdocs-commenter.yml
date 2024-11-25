@@ -15,7 +15,7 @@ jobs:
 
     steps:
       - name: Download TBDocs Report
-        uses: dawidd6/action-download-artifact@v2
+        uses: dawidd6/action-download-artifact@v6
         with:
           run_id: ${{ github.event.workflow_run.id }}
           name: tbdocs-reporter-output
